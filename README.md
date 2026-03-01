@@ -1,21 +1,19 @@
-# MOVRP Perishable Food Distribution Code
+# MOVRP – Multi-Objective Vehicle Routing for Sustainable Perishable Food Distribution
 
-This repository contains the Python implementation for the paper:
+This repository contains the code for the paper:
 
-"A Multi-Objective Vehicle Routing Model for Sustainable Perishable Food Distribution: Minimizing Cost and Emissions While Maximizing Freshness"
+**A Multi-Objective Vehicle Routing Model for Sustainable Perishable Food Distribution: Minimizing Cost and Emissions While Maximizing Freshness**
 
-## Contents
-- `sa_solver.py`: Simulated Annealing primary solver
-- `ga_benchmark.py`: Genetic Algorithm benchmark
-- `freshness_model.py`: Arrhenius-Gompertz freshness decay
-- `sensitivity_analysis.py`: Weight sensitivity grid search
-- `utils.py`: Helper functions (scalarization, fuzzy windows, priority penalties)
+## Features
+- Multi-objective optimization: cost, CO₂ emissions, freshness
+- Simulated Annealing (primary solver)
+- Genetic Algorithm (benchmark)
+- Fuzzy time windows with priority-weighted penalties
+- Arrhenius-Gompertz freshness decay model
+- Weight sensitivity analysis
+- Statistical validation (Wilcoxon signed-rank test, Hedges' g)
 
 ## Requirements
-Python 3.12+
-See `requirements.txt`
-
-## How to run
+Python 3.9+
 ```bash
 pip install -r requirements.txt
-python src/sa_solver.py --instance solomon_r101.txt --weights 0.33 0.33 0.34# Mart
