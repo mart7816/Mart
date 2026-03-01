@@ -1,0 +1,82 @@
+# MOVRP_Perishable_Food_Distribution.py
+# Basic skeleton for multi-objective VRP: minimize cost + emissions, maximize freshness
+# Uses Simulated Annealing (SA) primary, Genetic Algorithm (GA) benchmark
+# Requires: numpy, scipy, matplotlib, networkx (for graphs)
+
+import numpy as np
+import random
+import math
+import copy
+from scipy.stats import wilcoxon
+from scipy.stats import hedges_g  # Approximate Hedges' g (use library or implement)
+
+# 1. Load Solomon instance (public data)
+def load_solomon_instance(file_path):
+    # Parse .txt file (example for R101)
+    # Returns: depot, customers (coord, demand, time_window), vehicle capacity, etc.
+    # Implement parsing logic here (standard Solomon format)
+    pass  # Placeholder - download from https://www.sintef.no/projectweb/top/vrptw/solomon-benchmark/
+
+# 2. Arrhenius-Gompertz freshness model
+def freshness_decay(time_delivered, temp, base_shelf_life=1450, T_ref=4, Ea=80_000, R=8.314):
+    # Simplified Arrhenius-Gompertz: freshness % = 100 * exp(-k * (t - t_ref))
+    k = 1 / base_shelf_life * math.exp(-Ea / (R * (temp + 273.15))) * math.exp(Ea / (R * (T_ref + 273.15)))
+    freshness = 100 * math.exp(-k * time_delivered)
+    return max(0, freshness)
+
+# 3. Objective functions
+def calculate_cost(route, distances, fixed_cost=100, var_cost=1.0):
+    return fixed_cost * len(route) + var_cost * sum(distances[i][j] for i, j in route)
+
+def calculate_emissions(route, distances, emission_factor=0.2):
+    return emission_factor * sum(distances[i][j] for i, j in route)
+
+def calculate_freshness(routes, arrival_times, temps):
+    freshness_sum = 0
+    for route, times in zip(routes, arrival_times):
+        for i, arrival in enumerate(times):
+            freshness_sum += freshness_decay(arrival, temps[i])
+    return freshness_sum / len(routes)  # average
+
+# 4. Simulated Annealing (main solver)
+def simulated_annealing(problem, initial_temp=1000, cooling_rate=0.995, iterations=10000):
+    current_solution = generate_initial_solution(problem)
+    best_solution = copy.deepcopy(current_solution)
+    current_fitness = evaluate_fitness(current_solution, problem)
+    best_fitness = current_fitness
+    temp = initial_temp
+
+    for i in range(iterations):
+        neighbor = generate_neighbor(current_solution)
+        neighbor_fitness = evaluate_fitness(neighbor, problem)
+        delta = neighbor_fitness - current_fitness
+
+        if delta < 0 or random.random() < math.exp(-delta / temp):
+            current_solution = neighbor
+            current_fitness = neighbor_fitness
+            if neighbor_fitness < best_fitness:
+                best_solution = neighbor
+                best_fitness = neighbor_fitness
+
+        temp *= cooling_rate
+
+    return best_solution, best_fitness
+
+# 5. Genetic Algorithm (benchmark)
+def genetic_algorithm(problem, pop_size=100, generations=500):
+    # Implement GA: population, selection, crossover, mutation
+    pass  # Placeholder - full implementation needed
+
+# 6. Statistical validation
+def statistical_comparison(sa_fitnesses, ga_fitnesses):
+    stat, p_value = wilcoxon(sa_fitnesses, ga_fitnesses)
+    hedges_effect = hedges_g(sa_fitnesses, ga_fitnesses)  # Use library or formula
+    return p_value, hedges_effect
+
+# Main execution example
+if __name__ == "__main__":
+    problem = load_solomon_instance("solomon_r101.txt")
+    sa_solution, sa_fitness = simulated_annealing(problem)
+    ga_solution, ga_fitness = genetic_algorithm(problem)
+    p_val, hedges = statistical_comparison([run_sa() for _ in range(10)], [run_ga() for _ in range(10)])
+    print(f"Wilcoxon p-value: {p_val:.4f}, Hedges' g: {hedges:.2f}")
